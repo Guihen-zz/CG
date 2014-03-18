@@ -24,7 +24,7 @@
 
       void main(void)
       {
-        gl_FragmentColor = vec4 (1.0, 1.0, 1.0, 1.0); // White with alpha=1;
+        gl_FragColor = vec4 (1.0, 1.0, 1.0, 1.0); // White with alpha=1;
       }
     </script>
 
@@ -36,7 +36,7 @@
       {
         var canvas = $('#canvas-webgl')[0];
         startGL (canvas);
-        startShadders();
+        startShaders();
         startBuffers(); // In this case, it will draw a triangle and a square.
         startEnvironment();
         drawScene();
@@ -47,10 +47,10 @@
       {
         try
         {
-          gl = canvas.getContext ('webGL') ||
+          gl = canvas.getContext ('webgl') ||
                canvas.getContext ('experimental-webgl');
-          gl = viewportWidth  = canvas.width;
-          gl = viewportHeight = canvas.height;
+          gl.viewportWidth  = canvas.width;
+          gl.viewportHeight = canvas.height;
         }
         catch (e)
         {
@@ -77,15 +77,15 @@
         gl.useProgram (shaderProgram);
 
         shaderProgram.vertexPositionAttribute = gl.getAttribLocation (
-                                                  shaderProgram, vertexPosition);
+                                                  shaderProgram, "vertexPosition");
         gl.enableVertexAttribArray (shaderProgram.vertexPositionAttribute);
         
-        shaderProgram.mMatrixUniform = gl.getUniformLocation (shaderProgram,
+        shaderProgram.modelMatrixUniform = gl.getUniformLocation (shaderProgram,
                                                               'modelMatrix');
-        shaderProgram.vMatrixUniform = gl.getUniformLocation (shaderProgram,
+        shaderProgram.viewMatrixUniform = gl.getUniformLocation (shaderProgram,
                                                               'viewMatrix');
-        shaderProgram.pMatrixUniform = gl.getUniformLocation (shaderProgram,
-                                                              'positionMatrix');        
+        shaderProgram.projectionMatrixUniform = gl.getUniformLocation (shaderProgram,
+                                                              'projectionMatrix');        
       }
 
       function getShader (gl, id)
@@ -126,7 +126,7 @@
 
       var modelMatrix = mat4.create();
       var viewMatrix = mat4.create();
-      var positionMatrix = mat4.create();
+      var projectionMatrix = mat4.create();
 
       var triangleVertexPositionBuffer;
       var squareVertexPositionBuffer;
@@ -168,25 +168,25 @@
         // drawing triangle
         mat4.translate( modelMatrix, [-1.5, 0.0, -7.0]);
         gl.bindBuffer( gl.ARRAY_BUFFER, triangleVertexPositionBuffer);
-        gl.vertexAttributePointer( shaderProgram.vertexPositionAttribute,
+        gl.vertexAttribPointer( shaderProgram.vertexPositionAttribute,
                         triangleVertexPositionBuffer.itemSize, gl.FLOAT, false, 0, 0);
-        setMatricUniforms();
+        setMatrixUniforms();
         gl.drawArrays( gl.TRIANGLES, 0, triangleVertexPositionBuffer.numItems);
         
         // drawing square
         mat4.translate( modelMatrix, [3.0, 0.0, 0.0]);
         gl.bindBuffer( gl.ARRAY_BUFFER, squareVertexPositionBuffer);
-        gl.vertexAttributePointer( shaderProgram.vertexPositionAttribute,
+        gl.vertexAttribPointer( shaderProgram.vertexPositionAttribute,
                         triangleVertexPositionBuffer.itemSize, gl.FLOAT, false, 0, 0);
-        setMatricUniforms();
+        setMatrixUniforms();
         gl.drawArrays( gl.TRIANGLE_STRIP, 0, squareVertexPositionBuffer.numItems);
       }
 
-      function setMatricUniforms()
+      function setMatrixUniforms()
       {
-        gl.uniformMatrix4fv( shaderProgram.mMatrixUniform, false, modelMatrix);
-        gl.uniformMatrix4fv( shaderProgram.vMatrixUniform, false, viewMatrix);
-        gl.uniformMatrix4fv( shaderProgram.pMatrixUniform, false, projectionMatrix);
+        gl.uniformMatrix4fv( shaderProgram.modelMatrixUniform, false, modelMatrix);
+        gl.uniformMatrix4fv( shaderProgram.viewMatrixUniform, false, viewMatrix);
+        gl.uniformMatrix4fv( shaderProgram.projectionMatrixUniform, false, projectionMatrix);
       }
     </script>
 
@@ -195,7 +195,7 @@
   
   <body>
     Veja as formas abaixo: <br />
-    <canvas id="cavas-webgl"
+    <canvas id="canvas-webgl"
             width="500px"
             height="500px">
     </canvas>
