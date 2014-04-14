@@ -152,23 +152,23 @@
         pyramidVertexPositionBuffer = gl.createBuffer();
         gl.bindBuffer( gl.ARRAY_BUFFER, pyramidVertexPositionBuffer);
         var vertexes = [
-                        // front
-                          0.0,  1.0,  0.0,
-                        -1.0, -1.0,  1.0,
-                          1.0, -1.0,  1.0,
-                        // right
-                          0.0,  1.0,  0.0,
-                          1.0, -1.0,  1.0,
-                          1.0, -1.0, -1.0,
-                        // back
-                          0.0,  1.0,  0.0,
-                          1.0, -1.0, -1.0,
-                        -1.0, -1.0, -1.0,
-                        // left
-                          0.0,  1.0,  0.0,
-                        -1.0, -1.0, -1.0,
-                        -1.0, -1.0,  1.0
-                      ];
+    // Frente
+      0.0,  1.0,  0.0,
+    -1.0, -1.0,  1.0,
+      1.0, -1.0,  1.0,
+    // Direita
+      0.0,  1.0,  0.0,
+      1.0, -1.0,  1.0,
+      1.0, -1.0, -1.0,
+    // Trás
+      0.0,  1.0,  0.0,
+      1.0, -1.0, -1.0,
+    -1.0, -1.0, -1.0,
+    // Esquerda
+      0.0,  1.0,  0.0,
+    -1.0, -1.0, -1.0,
+    -1.0, -1.0,  1.0
+];;
         gl.bufferData( gl.ARRAY_BUFFER, new Float32Array( vertexes), gl.STATIC_DRAW); // static draw := no data travel from gpu to cpu
         pyramidVertexPositionBuffer.itemSize = 3; // shape dimension
         pyramidVertexPositionBuffer.numItems = 12; // vertex quantities
@@ -176,23 +176,23 @@
         pyramidVertexColorBuffer = gl.createBuffer();
         gl.bindBuffer( gl.ARRAY_BUFFER, pyramidVertexColorBuffer);
         var colors = [
-                        // front
-                        1.0, 0.0, 0.0, 1.0,
-                        0.0, 1.0, 0.0, 1.0,
-                        0.0, 0.0, 1.0, 1.0,
-                        // right
-                        1.0, 0.0, 0.0, 1.0,
-                        0.0, 0.0, 1.0, 1.0,
-                        0.0, 1.0, 0.0, 1.0,
-                        // back
-                        1.0, 0.0, 0.0, 1.0,
-                        0.0, 1.0, 0.0, 1.0,
-                        0.0, 0.0, 1.0, 1.0,
-                        // left
-                        1.0, 0.0, 0.0, 1.0,
-                        0.0, 0.0, 1.0, 1.0,
-                        0.0, 1.0, 0.0, 1.0
-                     ];
+    // Frente
+    1.0, 0.0, 0.0, 1.0,
+    0.0, 1.0, 0.0, 1.0,
+    0.0, 0.0, 1.0, 1.0,
+    // Direita
+    1.0, 0.0, 0.0, 1.0,
+    0.0, 0.0, 1.0, 1.0,
+    0.0, 1.0, 0.0, 1.0,
+    // Trás
+    1.0, 0.0, 0.0, 1.0,
+    0.0, 1.0, 0.0, 1.0,
+    0.0, 0.0, 1.0, 1.0,
+    // Esquerda
+    1.0, 0.0, 0.0, 1.0,
+    0.0, 0.0, 1.0, 1.0,
+    0.0, 1.0, 0.0, 1.0
+];
         gl.bufferData( gl.ARRAY_BUFFER, new Float32Array( colors), gl.STATIC_DRAW);
         pyramidVertexColorBuffer.itemSize = 4;
         pyramidVertexColorBuffer.numItems = 12;
@@ -201,42 +201,42 @@
         cubeVertexPositionBuffer = gl.createBuffer();
         gl.bindBuffer( gl.ARRAY_BUFFER, cubeVertexPositionBuffer);
         vertexes = [
-                     // front
-                    -1.0, -1.0,  1.0,
-                     1.0, -1.0,  1.0,
-                     1.0,  1.0,  1.0,
-                    -1.0,  1.0,  1.0,
+  // Frente
+  -1.0, -1.0,  1.0,
+   1.0, -1.0,  1.0,
+   1.0,  1.0,  1.0,
+  -1.0,  1.0,  1.0,
 
-                    // back
-                    -1.0, -1.0, -1.0,
-                    -1.0,  1.0, -1.0,
-                     1.0,  1.0, -1.0,
-                     1.0, -1.0, -1.0,
+  // Trás
+  -1.0, -1.0, -1.0,
+  -1.0,  1.0, -1.0,
+   1.0,  1.0, -1.0,
+   1.0, -1.0, -1.0,
 
-                    // top
-                    -1.0,  1.0, -1.0,
-                    -1.0,  1.0,  1.0,
-                     1.0,  1.0,  1.0,
-                     1.0,  1.0, -1.0,
+  // Topo
+  -1.0,  1.0, -1.0,
+  -1.0,  1.0,  1.0,
+   1.0,  1.0,  1.0,
+   1.0,  1.0, -1.0,
 
-                    // base
-                    -1.0, -1.0, -1.0,
-                     1.0, -1.0, -1.0,
-                     1.0, -1.0,  1.0,
-                    -1.0, -1.0,  1.0,
+  // Base
+  -1.0, -1.0, -1.0,
+   1.0, -1.0, -1.0,
+   1.0, -1.0,  1.0,
+  -1.0, -1.0,  1.0,
 
-                    // right
-                     1.0, -1.0, -1.0,
-                     1.0,  1.0, -1.0,
-                     1.0,  1.0,  1.0,
-                     1.0, -1.0,  1.0,
+  // Direita
+   1.0, -1.0, -1.0,
+   1.0,  1.0, -1.0,
+   1.0,  1.0,  1.0,
+   1.0, -1.0,  1.0,
 
-                    // left
-                    -1.0, -1.0, -1.0,
-                    -1.0, -1.0,  1.0,
-                    -1.0,  1.0,  1.0,
-                    -1.0,  1.0, -1.0,
-                   ];
+  // Esquerda
+  -1.0, -1.0, -1.0,
+  -1.0, -1.0,  1.0,
+  -1.0,  1.0,  1.0,
+  -1.0,  1.0, -1.0,
+];
         gl.bufferData( gl.ARRAY_BUFFER, new Float32Array( vertexes), gl.STATIC_DRAW);
         cubeVertexPositionBuffer.itemSize = 3; // shape dimension
         cubeVertexPositionBuffer.numItems = 24; // vertex quantities
@@ -322,10 +322,10 @@
         modelMatrixPush(); /* Store the original matrix, before transformation. */
         mat4.rotate( modelMatrix, degToRad( pyramidRot), [0, 1, 0]);
 
-        gl.bindBuffer( gl.ELEMENT_ARRAY_BUFFER, pyramidVertexPositionBuffer);
+        gl.bindBuffer( gl.ARRAY_BUFFER, pyramidVertexPositionBuffer);
         gl.vertexAttribPointer( shaderProgram.vertexPositionAttribute,
                         pyramidVertexPositionBuffer.itemSize, gl.FLOAT, false, 0, 0);
-        gl.bindBuffer( gl.ELEMENT_ARRAY_BUFFER, pyramidVertexColorBuffer);
+        gl.bindBuffer( gl.ARRAY_BUFFER, pyramidVertexColorBuffer);
         gl.vertexAttribPointer( shaderProgram.vertexColorAttribute,
                         pyramidVertexColorBuffer.itemSize, gl.FLOAT, false, 0, 0);
         setMatrixUniforms();
@@ -379,8 +379,8 @@
   <body>
     Polihedron: <br />
     <canvas id="canvas-webgl"
-            width="500px"
-            height="500px">
+            width="800px"
+            height="600px">
     </canvas>
   </body>
 </html>
