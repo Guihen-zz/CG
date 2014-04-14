@@ -335,12 +335,12 @@
         // drawing square
         mat4.translate( modelMatrix, [3.0, 0.0, 0.0]);
         modelMatrixPush();
-        mat4.rotate( modelMatrix, degToRad( cubeRot), [1, 0, 0.2]);
+        mat4.rotate( modelMatrix, degToRad( cubeRot), [0.2, 0.2, 0.2]);
 
-        gl.bindBuffer( gl.ELEMENT_ARRAY_BUFFER, cubeVertexIndexBuffer);
+        gl.bindBuffer( gl.ARRAY_BUFFER, cubeVertexPositionBuffer);
         gl.vertexAttribPointer( shaderProgram.vertexPositionAttribute,
                       cubeVertexPositionBuffer.itemSize, gl.FLOAT, false, 0, 0);
-        gl.bindBuffer( gl.ELEMENT_ARRAY_BUFFER, cubeVertexColorBuffer);
+        gl.bindBuffer( gl.ARRAY_BUFFER, cubeVertexColorBuffer);
         gl.vertexAttribPointer( shaderProgram.vertexColorAttribute,
                         cubeVertexColorBuffer.itemSize, gl.FLOAT, false, 0, 0);
         setMatrixUniforms();
