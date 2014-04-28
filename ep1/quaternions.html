@@ -81,8 +81,22 @@
         document.onmousedown = mouseDown;
         document.onmouseup = mouseUp;
         document.onmousemove = mouseMoved;
+        window.onresize = windowResized;
 
         loop();
+      }
+
+      function windowResized()
+      {
+        var width = $(window).width();
+        var height = $(window).height()
+        
+        gl.viewportWidth  = width;
+        gl.viewportHeight = height;
+
+        var canvas = $('#canvas-webgl')[0];
+        canvas.attr("width", width);
+        canvas.height( height);
       }
 
       function startGL (canvas)
@@ -421,6 +435,7 @@
 
       function drawScene()
       {
+        console.log(gl.viewportWidth);
         gl.clear( gl.COLOR_BUFFER_BIT | gl.DEPTH_BUFFER_BIT);
         mat4.perspective( 45, gl.viewportWidth / gl.viewportHeight, 0.1, 
                           100.0, projectionMatrix);
@@ -479,13 +494,11 @@
   
   <body>
     <p>
-      Move the box.<br />
+      Use the mouse to drag and move the box.<br />
       <span style="color: #22aa22">Use the a, s, d, w keys to move the box.</span><br />
       <span style="color: #22aa22">Use the z, x keys to change the zoom.</span><br />
     </p>
-    <canvas id="canvas-webgl"
-            width="800px"
-            height="600px">
+    <canvas id="canvas-webgl" width="1000px" height="600px">
     </canvas>
     <p>
       <span style="color: #22aa22">Use the 1, 2 or 3 keys to change the filter.</span><br />
