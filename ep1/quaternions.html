@@ -12,15 +12,47 @@
       attribute vec3 vertexPosition;
       attribute vec2 aTextureCoord;
 
+      uniform vec2 mouseDirection;
       uniform mat4 modelMatrix;
       uniform mat4 viewMatrix;
       uniform mat4 projectionMatrix;
 
       varying vec2 vTextureCoord; // output of the vertex shader
 
+      mat4 rotate( vec2 v)
+      {
+        float x, y;
+        float a, b;
+        x = v.x;
+        y = v.y;
+        a = x * 10.0;
+        b = y * 10.0;
+        mat4 zrot = mat4(cos( a), -sin( a),  0.0, 0.0,
+                         sin( a),  cos( a), 0.0, 0.0,
+                         0.0, 0.0,  1.0, 0.0,
+                         0.0, 0.0,  0.0, 1.0 );
+        mat4 xrot = mat4( 1.0, 0.0,  0.0, 0.0,
+                         0.0, cos( b), -sin( b),  0.0,
+                         0.0, sin( b),  cos( b), 0.0,
+                         0.0, 0.0,  0.0, 1.0 );
+        if (y == 0.0){
+                  return mat4 (1,0,0,0,
+                               0,1,0,0,
+                               0,0,1,0,
+                               0,0,0,1);      
+        }
+        else {
+              return mat4 (0,1,0,0,
+                           1,0,0,0,
+                           0,0,1,0,
+                           0,0,0,1);
+        }
+      }
+
       void main(void)
       {
-        gl_Position = projectionMatrix * viewMatrix * modelMatrix * 
+        mat4 m = rotate( mouseDirection);
+        gl_Position = projectionMatrix * m * modelMatrix *
                       vec4 (vertexPosition, 1.0);
         vTextureCoord = aTextureCoord;
       }
@@ -95,8 +127,8 @@
         gl.viewportHeight = height;
 
         var canvas = $('#canvas-webgl')[0];
-        canvas.attr("width", width);
-        canvas.height( height);
+        //canvas.width(width);
+        //canvas.height( height);
       }
 
       function startGL (canvas)
@@ -118,7 +150,8 @@
       {
         var vertexShader    = getShader (gl, 'vertex-shader');
         var fragmentShader  = getShader (gl, 'fragment-shader');
-
+        //vectorMousePosition[0] = 0;
+        //vectorMousePosition[1] = 0;
         shaderProgram = gl.createProgram();
         gl.attachShader (shaderProgram, vertexShader);
         gl.attachShader (shaderProgram, fragmentShader);
@@ -133,6 +166,7 @@
 
         shaderProgram.vertexPositionAttribute = gl.getAttribLocation (
                                                   shaderProgram, "vertexPosition");
+
         gl.enableVertexAttribArray (shaderProgram.vertexPositionAttribute);
 
 
@@ -140,6 +174,7 @@
         gl.enableVertexAttribArray( shaderProgram.vertexTextureCoordAttribute);
 
 
+        shaderProgram.mouseDirection = gl.getUniformLocation (shaderProgram, 'mouseDirection');
         shaderProgram.modelMatrixUniform = gl.getUniformLocation (shaderProgram,
                                                               'modelMatrix');
         shaderProgram.viewMatrixUniform = gl.getUniformLocation (shaderProgram,
@@ -186,9 +221,16 @@
 
       function startBuffers()
       {
+        quaternionsBuffer = gl.createBuffer();
+        gl.bindBuffer( gl.ARRAY_BUFFER, quaternionsBuffer);
+        vertices = [0,0,0,0];
+        gl.bufferData( gl.ARRAY_BUFFER, new Float32Array( vertices), gl.STATIC_DRAW);
+        quaternionsBuffer.itemSize = 4; // shape dimension
+        quaternionsBuffer.numItems = 1; // vertex quantities
+
         cubeVertexPositionBuffer = gl.createBuffer();
         gl.bindBuffer( gl.ARRAY_BUFFER, cubeVertexPositionBuffer);
-        vertexes = [
+        vertices = [
                       // front
                       -1.0, -1.0,  1.0,
                        1.0, -1.0,  1.0,
@@ -226,7 +268,7 @@
                       -1.0,  1.0, -1.0,
                     ];
 
-        gl.bufferData( gl.ARRAY_BUFFER, new Float32Array( vertexes), gl.STATIC_DRAW);
+        gl.bufferData( gl.ARRAY_BUFFER, new Float32Array( vertices), gl.STATIC_DRAW);
         cubeVertexPositionBuffer.itemSize = 3; // shape dimension
         cubeVertexPositionBuffer.numItems = 24; // vertex quantities
 
@@ -276,7 +318,7 @@
 
         cubeVertexIndexBuffer = gl.createBuffer();
         gl.bindBuffer( gl.ELEMENT_ARRAY_BUFFER, cubeVertexIndexBuffer);
-        var index = [ // ????
+        var index = [ // tesselation
                         0, 1, 2,      0, 2, 3,    // front
                         4, 5, 6,      4, 6, 7,    // back
                         8, 9, 10,     8, 10, 11,  // top
@@ -289,6 +331,7 @@
         cubeVertexIndexBuffer.numItems = 36;
       }
 
+      var vectorMousePosition = Array();
       function startEnvironment()
       {
         gl.clearColor( 0.0, 0.0, 0.0, 1.0); // a black panel
@@ -368,6 +411,15 @@
           posYatual = event.clientY;
           dy = posYatual - posYanterior;
           dx = posXatual - posXanterior;
+          
+          if( dy > 0) vectorMousePosition[1] = 1;
+          else if( dy < 0) vectorMousePosition[1] = -1;
+          else vectorMousePosition[1] = 0;
+
+          if( dx > 0) vectorMousePosition[0] = 1;
+          else if( dx < 0) vectorMousePosition[0] = -1;
+          else vectorMousePosition[0] = 0;
+
           posXanterior = posXatual;
           posYanterior = posYatual;
         }
@@ -376,6 +428,8 @@
       function mouseUp( event)
       {
         mouseIsDown = false;
+        vectorMousePosition[0] = 0;
+        vectorMousePosition[1] = 0;
       }
 
       function makeTexture( textures)
@@ -424,8 +478,7 @@
         {
           ySpeed += dx;
           xSpeed += dy;  
-        }
-        
+        }        
 
         if( keysPressed[90]) // zoom in (z key)
           zPosition -= 0.05;
@@ -433,9 +486,9 @@
           zPosition += 0.05;
       }
 
+      var vectorPosition = Array();
       function drawScene()
       {
-        console.log(gl.viewportWidth);
         gl.clear( gl.COLOR_BUFFER_BIT | gl.DEPTH_BUFFER_BIT);
         mat4.perspective( 45, gl.viewportWidth / gl.viewportHeight, 0.1, 
                           100.0, projectionMatrix);
@@ -443,8 +496,8 @@
         mat4.identity( viewMatrix);
 
         mat4.translate( modelMatrix, [0.0, 0.0, zPosition]);
-        mat4.rotate( modelMatrix, degToRad( xRot), [1, 0, 0]);
-        mat4.rotate( modelMatrix, degToRad( yRot), [0, 1, 0]);
+        //mat4.rotate( modelMatrix, degToRad( xRot), [1, 0, 0]);
+        //mat4.rotate( modelMatrix, degToRad( yRot), [0, 1, 0]);
 
         gl.bindBuffer( gl.ARRAY_BUFFER, cubeVertexPositionBuffer);
         gl.vertexAttribPointer( shaderProgram.vertexPositionAttribute,
@@ -461,6 +514,7 @@
         gl.uniform1i( shaderProgram.samplerUniform, 0);
 
         gl.bindBuffer(gl.ELEMENT_ARRAY_BUFFER, cubeVertexIndexBuffer);
+        
         setMatrixUniforms();
         gl.drawElements( gl.TRIANGLES, cubeVertexIndexBuffer.numItems, gl.UNSIGNED_SHORT, 0);
       }
@@ -470,6 +524,8 @@
         gl.uniformMatrix4fv( shaderProgram.modelMatrixUniform, false, modelMatrix);
         gl.uniformMatrix4fv( shaderProgram.viewMatrixUniform, false, viewMatrix);
         gl.uniformMatrix4fv( shaderProgram.projectionMatrixUniform, false, projectionMatrix);
+        gl.uniform2f( shaderProgram.mouseDirection, false, vectorMousePosition);
+        console.log(shaderProgram.mouseDirection)
       }
 
       function animate()
