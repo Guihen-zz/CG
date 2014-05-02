@@ -10,33 +10,29 @@
 
     <script id="vertex-shader" type="x-shader/x-vertex">
       attribute vec3 vertexPosition;
-      
+      attribute vec4 vertexColor;
 
       uniform mat4 modelMatrix;
       uniform mat4 viewMatrix;
       uniform mat4 projectionMatrix;
 
-      
+      varying vec4 color;
 
       void main(void)
       {
         gl_Position = projectionMatrix * viewMatrix * modelMatrix *
                       vec4 (vertexPosition, 1.0);
-        
+        color = vertexColor;        
       }
     </script>
     
     <script id="fragment-shader" type="x-shader/x-fragment">
       precision mediump float;
-
-      
-
-      
+      varying vec4 color;      
 
       void main(void)
       {
-        //gl_FragColor = texture2D( uSampler, vec2( vTextureCoord.s, vTextureCoord.t));
-        gl_FragColor = vec4(0,0,1,1);
+        gl_FragColor = color;
       }
     </script>
 
@@ -50,6 +46,7 @@
       var projectionMatrix = mat4.create();
 
       var cubeVertexPositionBuffer;
+      var cubeVertexColorBuffer;
       var cubeVertexIndexBuffer;
 
       var texturesBox = Array();
@@ -66,9 +63,14 @@
       var last = 0; // timestep
 
       var KNIGHT = new Object();
+      var KING = new Object();
+
+      // Pieces
+      var blackKing = new Object();
+      var blackKnight = new Object();
 
       // Beginning the environment to use webGL
-      $(function () { readFile(); });
+      $(function () { readFile();});
 
       function startWebGL()
       {
@@ -98,27 +100,53 @@
           var lines = data.split( "\n");
           for( var i = 0; i < lines.length; i++)
           {
-            var where = "";
             if(lines[i][0] == 'v')
-            {
-              where = "vertices";
-            }
-            else if(lines[i][0] == 'f')
-            {
-              where = "faces"; 
-            }
-
-            if( where != "")
             {
               var v = lines[i].split( " ");
               for( var j = 1; j <= 3; j++)
               {
-                KNIGHT[where].push( parseFloat( v[j]));
+                KNIGHT['vertices'].push( parseFloat( v[j]));
+              }
+            }
+            else if(lines[i][0] == 'f')
+            {
+              var v = lines[i].split( " ");
+              for( var j = 1; j <= 3; j++)
+              {
+                KNIGHT['faces'].push( parseFloat( v[j]) - 1);
               }
             }
           }
 
-        }, 'text'). done(function(){ startWebGL();});
+          $.get('pecas/rei.obj', function(data) {
+
+            KING['vertices'] = Array();
+            KING['faces'] = Array();
+
+            var lines = data.split( "\n");
+            for( var i = 0; i < lines.length; i++)
+            {
+              if(lines[i][0] == 'v')
+              {
+                var v = lines[i].split( " ");
+                for( var j = 1; j <= 3; j++)
+                {
+                  KING['vertices'].push( parseFloat( v[j]));
+                }
+              }
+              else if(lines[i][0] == 'f')
+              {
+                var v = lines[i].split( " ");
+                for( var j = 1; j <= 3; j++)
+                {
+                  KING['faces'].push( parseFloat( v[j]) - 1);
+                }
+              }
+            }
+          }, 'text').done(function(){ startWebGL(); }); // Must be called when all the pieces were read.
+
+        }, 'text');
+
       }
 
       function windowResized()
@@ -167,13 +195,12 @@
 
         shaderProgram.vertexPositionAttribute = gl.getAttribLocation (
                                                   shaderProgram, "vertexPosition");
-
         gl.enableVertexAttribArray (shaderProgram.vertexPositionAttribute);
 
 
-        
-        
-
+        shaderProgram.vertexColorAttribute = gl.getAttribLocation (
+                                                  shaderProgram, "vertexColor");
+        gl.enableVertexAttribArray( shaderProgram.vertexColorAttribute);
 
         shaderProgram.modelMatrixUniform = gl.getUniformLocation (shaderProgram,
                                                               'modelMatrix');
@@ -219,24 +246,72 @@
         return shader;
       }
 
+      function getColorArray( size, color)
+      {
+        var colorArray = Array();
+        for( var i = 0; i < size; i++)
+        {
+          for( var j = 0; j < 4; j++)
+          {
+            colorArray.push( color[j]);
+          }
+        }
+        return colorArray;
+      }
+
+      function blackKnightBuffer()
+      {
+        blackKnight['vertexBuffer'] = gl.createBuffer();
+        gl.bindBuffer( gl.ARRAY_BUFFER, blackKnight['vertexBuffer']);
+
+        gl.bufferData( gl.ARRAY_BUFFER, new Float32Array( KNIGHT.vertices), gl.STATIC_DRAW);
+        blackKnight.vertexBuffer.itemSize = 3; // shape dimension
+        blackKnight.vertexBuffer.numItems = KNIGHT.vertices.length / 3; // vertex quantities
+
+        blackKnight['colorBuffer'] = gl.createBuffer();
+        gl.bindBuffer( gl.ARRAY_BUFFER, blackKnight['colorBuffer']);
+        color = getColorArray( KNIGHT.vertices.length, [0.2, 0.2, 0.2, 1.0]);
+        gl.bufferData( gl.ARRAY_BUFFER, new Float32Array( color), gl.STATIC_DRAW);
+        blackKnight.colorBuffer.itemSize = 4;
+        blackKnight.colorBuffer.numItems = color.length;
+
+        blackKnight['indexBuffer'] = gl.createBuffer();
+        gl.bindBuffer( gl.ELEMENT_ARRAY_BUFFER, blackKnight['indexBuffer']);
+
+        gl.bufferData( gl.ELEMENT_ARRAY_BUFFER, new Uint16Array( KNIGHT.faces), gl.STATIC_DRAW);
+        blackKnight.indexBuffer.itemSize = 1;
+        blackKnight.indexBuffer.numItems = KNIGHT.faces.length;
+      }
+
+      function blackKingBuffer()
+      {
+        blackKing["vertexBuffer"] = gl.createBuffer();
+        gl.bindBuffer( gl.ARRAY_BUFFER, blackKing["vertexBuffer"]);
+
+        gl.bufferData( gl.ARRAY_BUFFER, new Float32Array( KING.vertices), gl.STATIC_DRAW);
+        blackKing.vertexBuffer.itemSize = 3; // shape dimension
+        blackKing.vertexBuffer.numItems = KING.vertices.length / 3; // vertex quantities
+
+        blackKing["colorBuffer"] = gl.createBuffer();
+        gl.bindBuffer( gl.ARRAY_BUFFER, blackKing["colorBuffer"]);
+        color = getColorArray( KING.vertices.length, [0.2, 0.2, 0.2, 1.0]);
+        gl.bufferData( gl.ARRAY_BUFFER, new Float32Array( color), gl.STATIC_DRAW);
+        blackKing.colorBuffer.itemSize = 4;
+        blackKing.colorBuffer.numItems = color.length;
+
+        blackKing["indexBuffer"] = gl.createBuffer();
+        gl.bindBuffer( gl.ELEMENT_ARRAY_BUFFER, blackKing["indexBuffer"]);
+
+        gl.bufferData( gl.ELEMENT_ARRAY_BUFFER, new Uint16Array( KING.faces), gl.STATIC_DRAW);
+        blackKing.indexBuffer.itemSize = 1;
+        blackKing.indexBuffer.numItems = KING.faces.length;
+      }
+
       function startBuffers()
       {
-        figVertexPositionBuffer = gl.createBuffer();
-        gl.bindBuffer( gl.ARRAY_BUFFER, figVertexPositionBuffer);
-        v1 = KNIGHT.vertices;
-
-        gl.bufferData( gl.ARRAY_BUFFER, new Float32Array( v1), gl.STATIC_DRAW);
-        figVertexPositionBuffer.itemSize = 3; // shape dimension
-        figVertexPositionBuffer.numItems = v1.length / 3; // vertex quantities
-
-        figVertexIndexBuffer = gl.createBuffer();
-        gl.bindBuffer( gl.ELEMENT_ARRAY_BUFFER, figVertexIndexBuffer);
-
-        v2 = KNIGHT['faces'];
-        gl.bufferData( gl.ELEMENT_ARRAY_BUFFER, new Uint16Array( v2), gl.STATIC_DRAW);
-        figVertexIndexBuffer.itemSize = 1;
-        figVertexIndexBuffer.numItems = v2.length;
-
+        blackKnightBuffer();
+        blackKingBuffer();
+        
         cubeVertexPositionBuffer = gl.createBuffer();
         gl.bindBuffer( gl.ARRAY_BUFFER, cubeVertexPositionBuffer);
         vertices = [
@@ -282,6 +357,26 @@
         cubeVertexPositionBuffer.numItems = 24; // vertex quantities
 
        
+        cubeVertexColorBuffer = gl.createBuffer();
+        gl.bindBuffer( gl.ARRAY_BUFFER, cubeVertexColorBuffer);
+        colors = [
+                    [1.0, 0.0, 0.0, 1.0],     // front
+                    [1.0, 1.0, 0.0, 1.0],     // back
+                    [0.0, 1.0, 0.0, 1.0],     // top
+                    [1.0, 0.5, 0.5, 1.0],     // base
+                    [1.0, 0.0, 1.0, 1.0],     // right
+                    [0.0, 0.0, 1.0, 1.0],     // left
+                 ];
+        var cornerColors = [];
+        for( var i in colors)
+        {
+          var color = colors[i];
+          for( var j=0; j < 4; j++)
+            cornerColors = cornerColors.concat( color);
+        }
+        gl.bufferData( gl.ARRAY_BUFFER, new Float32Array( cornerColors), gl.STATIC_DRAW);
+        cubeVertexColorBuffer.itemSize = 4;
+        cubeVertexColorBuffer.numItems = 24;
 
         cubeVertexIndexBuffer = gl.createBuffer();
         gl.bindBuffer( gl.ELEMENT_ARRAY_BUFFER, cubeVertexIndexBuffer);
@@ -426,20 +521,46 @@
         mat4.rotate( viewMatrix, degToRad( xRot), [1, 0, 0]);
         mat4.rotate( viewMatrix, degToRad( yRot), [0, 1, 0]);
 
-        gl.bindBuffer( gl.ARRAY_BUFFER, figVertexPositionBuffer);
+        gl.bindBuffer( gl.ARRAY_BUFFER, blackKnight['vertexBuffer']);
         gl.vertexAttribPointer( shaderProgram.vertexPositionAttribute,
-                      figVertexPositionBuffer.itemSize, gl.FLOAT, false, 0, 0);
-        gl.bindBuffer(gl.ELEMENT_ARRAY_BUFFER, figVertexIndexBuffer);
+                      blackKnight['vertexBuffer'].itemSize, gl.FLOAT, false, 0, 0);
+
+        gl.bindBuffer( gl.ARRAY_BUFFER, blackKnight['colorBuffer']);
+        gl.vertexAttribPointer( shaderProgram.vertexColorAttribute,
+                        blackKnight['colorBuffer'].itemSize, gl.FLOAT, false, 0, 0);
+
+        gl.bindBuffer(gl.ELEMENT_ARRAY_BUFFER, blackKnight['indexBuffer']);
         mat4.translate( modelMatrix, [-0.8, -0.8, -0.8]);
         mat4.scale(modelMatrix, [0.2, 0.2, 0.2]);
         setMatrixUniforms();
 
-        gl.drawElements( gl.TRIANGLES, figVertexIndexBuffer.numItems, gl.UNSIGNED_SHORT, 0);
+        gl.drawElements( gl.TRIANGLES, blackKnight['indexBuffer'].numItems, gl.UNSIGNED_SHORT, 0);
+        
+        // Draw BLACK KING
         mat4.identity( modelMatrix);
+        gl.bindBuffer( gl.ARRAY_BUFFER, blackKing.vertexBuffer);
+        gl.vertexAttribPointer( shaderProgram.vertexPositionAttribute,
+                      blackKing.vertexBuffer.itemSize, gl.FLOAT, false, 0, 0);
 
+        gl.bindBuffer( gl.ARRAY_BUFFER, blackKing.colorBuffer);
+        gl.vertexAttribPointer( shaderProgram.vertexColorAttribute,
+                        blackKing.colorBuffer.itemSize, gl.FLOAT, false, 0, 0);
+
+        gl.bindBuffer(gl.ELEMENT_ARRAY_BUFFER, blackKing.indexBuffer);
+        mat4.translate( modelMatrix, [-0.0, -0.8, -0.8]);
+        mat4.scale(modelMatrix, [0.2, 0.2, 0.2]);
+
+        setMatrixUniforms();
+        gl.drawElements( gl.TRIANGLES, blackKing.indexBuffer.numItems, gl.UNSIGNED_SHORT, 0);
+
+        mat4.identity( modelMatrix);
         gl.bindBuffer( gl.ARRAY_BUFFER, cubeVertexPositionBuffer);
         gl.vertexAttribPointer( shaderProgram.vertexPositionAttribute,
                       cubeVertexPositionBuffer.itemSize, gl.FLOAT, false, 0, 0);        
+
+        gl.bindBuffer( gl.ARRAY_BUFFER, cubeVertexColorBuffer);
+        gl.vertexAttribPointer( shaderProgram.vertexColorAttribute,
+                        cubeVertexColorBuffer.itemSize, gl.FLOAT, false, 0, 0);
 
         gl.bindBuffer(gl.ELEMENT_ARRAY_BUFFER, cubeVertexIndexBuffer);
         
