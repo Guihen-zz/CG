@@ -55,7 +55,7 @@
       var xSpeed    = 0;
       var yRot      = 0;
       var ySpeed    = 0;
-      var zPosition = -5.0;
+      var zPosition = -2.0;
       var textureType = 0;
 
       var keysPressed = {};
@@ -404,29 +404,7 @@
       function keyPressed( event)
       {
         keysPressed[event.keyCode] = true;
-
         var key = String.fromCharCode( event.keyCode);
-        if( key == "1")
-        {
-          textureType = 0;
-          $("#filter1").prop("checked", true);
-          $("#filter2").prop("checked", false);
-          $("#filter3").prop("checked", false);
-        }
-        else if( key == "2")
-        {
-          textureType = 1;
-          $("#filter1").prop("checked", false);
-          $("#filter2").prop("checked", true);
-          $("#filter3").prop("checked", false);
-        }
-        else if( key == "3")
-        {
-          $("#filter1").prop("checked", false);
-          $("#filter2").prop("checked", false);
-          $("#filter3").prop("checked", true);
-          textureType = 2;
-        }
       }
 
       function keyReleased( event)
@@ -513,14 +491,15 @@
       function drawScene()
       {
         gl.clear( gl.COLOR_BUFFER_BIT | gl.DEPTH_BUFFER_BIT);
-        mat4.perspective( 45, width / height, 0.1, 
-                          100.0, projectionMatrix);
+        mat4.perspective( 45, width / height, 0.1, 100.0, projectionMatrix);
+        
         mat4.identity( modelMatrix);
         mat4.identity( viewMatrix);
 
         mat4.translate( viewMatrix, [0.0, 0.0, zPosition]);
         mat4.rotate( viewMatrix, degToRad( xRot), [1, 0, 0]);
         mat4.rotate( viewMatrix, degToRad( yRot), [0, 1, 0]);
+        
 
         gl.bindBuffer( gl.ARRAY_BUFFER, blackKnight['vertexBuffer']);
         gl.vertexAttribPointer( shaderProgram.vertexPositionAttribute,
@@ -532,7 +511,7 @@
 
         gl.bindBuffer(gl.ELEMENT_ARRAY_BUFFER, blackKnight['indexBuffer']);
         mat4.translate( modelMatrix, [-0.8, -0.8, -0.8]);
-        mat4.scale(modelMatrix, [0.2, 0.2, 0.2]);
+        mat4.scale(modelMatrix, [0.3, 0.3, 0.3]);
         setMatrixUniforms();
 
         gl.drawElements( gl.TRIANGLES, blackKnight['indexBuffer'].numItems, gl.UNSIGNED_SHORT, 0);
@@ -549,7 +528,7 @@
 
         gl.bindBuffer(gl.ELEMENT_ARRAY_BUFFER, blackKing.indexBuffer);
         mat4.translate( modelMatrix, [-0.0, -0.8, -0.8]);
-        mat4.scale(modelMatrix, [0.2, 0.2, 0.2]);
+        mat4.scale(modelMatrix, [0.3, 0.3, 0.3]);
 
         setMatrixUniforms();
         gl.drawElements( gl.TRIANGLES, blackKing.indexBuffer.numItems, gl.UNSIGNED_SHORT, 0);
@@ -604,12 +583,5 @@
     </p>
     <canvas id="canvas-webgl" style="width: 100%; height: 100%">
     </canvas>
-    <p>
-      <span style="color: #22aa22">Use the 1, 2 or 3 keys to change the filter.</span><br />
-      <input type="radio" id="filter1" value="1" disabled="true"> NEAREST
-      <input type="radio" id="filter2" value="2" disabled="true"> LINEAR
-      <input type="radio" id="filter3" value="3" disabled="true"> LINEAR MIPMAP NEAREST (ONLY ON REDUCING THE BOX)
-    </p>
-    <div id="div"></div>
   </body>
 </html>
