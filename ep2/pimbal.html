@@ -148,8 +148,14 @@
       var cubeVertexPositionBuffer;
       var cubeVertexIndexBuffer;
       var particula = new Object();
+
+      var FORCES = new Object();
       function startBuffers()
       {
+        // This should be in a better place.
+        FORCES.gravity = new Array();
+        FORCES.impact = new Array();
+
         cubeVertexPositionBuffer = gl.createBuffer();
         gl.bindBuffer( gl.ARRAY_BUFFER, cubeVertexPositionBuffer);
         vertexes = [
@@ -251,10 +257,11 @@
         gl.bufferData( gl.ELEMENT_ARRAY_BUFFER, new Uint16Array( index), gl.STATIC_DRAW);
         cubeVertexIndexBuffer.itemSize = 1;
         cubeVertexIndexBuffer.numItems = 36;
-        particula.m = 20;
-        particula.f = new Array( 1, 0);
+        particula.m = 2;
+        particula.f = 0;
         particula.v = new Array( 0, 0, 0);
         particula.x = new Array( 0, 5, -20);
+        FORCES.gravity.push( particula);
       }
 
       function startEnvironment()
@@ -304,7 +311,6 @@
         
         mat4.identity( modelMatrix);
         mat4.translate( modelMatrix, particula.x);
-        forcas( particula);
 
         gl.bindBuffer( gl.ARRAY_BUFFER, cubeVertexPositionBuffer);
         gl.vertexAttribPointer( shaderProgram.vertexPositionAttribute,
@@ -338,10 +344,7 @@
         var now = new Date().getTime();
         if( last != 0)
         {
-          var t = now - last; /* gauge the framestep */
-          rotX += ((90 * t) / 1000.0) % 360.0;
-          rotY += ((75 * t) / 1000.0) % 360.0;
-          rotZ += ((50 * t) / 1000.0) % 360.0;
+          forcas();
         }
         last = now;
       }
@@ -350,22 +353,35 @@
         return degrees * Math.PI / 180;
       }
 
-      function forcas( p)
+      function forcas( )
       {
-        if( p.f[0])
+        var falling_particles = FORCES.gravity;
+        for (var i = 0; i < falling_particles.length; i++)
         {
-          p.x[1] += p.v[1];
-          p.v[1] -= 0.004;
-          if(p.x[1] <= -6)
+          var p = falling_particles[i];
+
+          if(p.x[1] <= -6.6)
           {
-            p.f[1] = 1;
-          } 
+            p.v[1] = p.f = 0;
+            p.x[1] = -6.6;
+            break;
+          }
+
+          p.f -= p.m * 0.05; // simulates the gravity.          
+          p.v[1] -= 0.05;
+          p.x[1] += p.v[1];
+
+          if(p.x[1] <= -6)
+          { 
+            FORCES.impact.push( p);
+          }
         }
 
-        if( p.f[1])
+        var colliding_particles = FORCES.impact;
+        for (var p = FORCES.impact.pop(); p != undefined; p = FORCES.impact.pop())
         {
-          p.v[1] += 0.05;
-          p.f[1] = 0;
+          p.f = -1 * p.f - 0.2; // 0.2 := colisão parcialmente elástica
+          p.v[1] = p.f / p.m;
         }
       }
     </script>
