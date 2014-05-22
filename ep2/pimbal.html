@@ -10,32 +10,28 @@
 
     <script id="vertex-shader" type="x-shader/x-vertex">
       attribute vec3 vertexPosition;
-      attribute vec2 aTextureCoord;
+      attribute vec4 vertexColor;
 
       uniform mat4 modelMatrix;
       uniform mat4 viewMatrix;
       uniform mat4 projectionMatrix;
-
-      varying vec2 vTextureCoord; // output of the vertex shader
+      varying vec4 color;
 
       void main(void)
       {
         gl_Position = projectionMatrix * viewMatrix * modelMatrix * 
                       vec4 (vertexPosition, 1.0);
-        vTextureCoord = aTextureCoord;
+        color = vertexColor;
       }
     </script>
     
     <script id="fragment-shader" type="x-shader/x-fragment">
       precision mediump float;
-
-      varying vec2 vTextureCoord;
-
-      uniform sampler2D uSampler;
+      varying vec4 color;
 
       void main(void)
       {
-        gl_FragColor = texture2D( uSampler, vec2( vTextureCoord.s, vTextureCoord.t));
+        gl_FragColor = color;
       }
     </script>
 
@@ -49,8 +45,7 @@
         startGL (canvas);
         startShaders();
         startBuffers(); // In this case, it will draw a triangle and a square.
-        startEnvironment();
-        startTexture();
+        startEnvironment();      
         loop();
       }
       
@@ -91,11 +86,9 @@
         shaderProgram.vertexPositionAttribute = gl.getAttribLocation (
                                                   shaderProgram, "vertexPosition");
         gl.enableVertexAttribArray (shaderProgram.vertexPositionAttribute);
-
-
-        shaderProgram.vertexTextureCoordAttribute = gl.getAttribLocation( shaderProgram, "aTextureCoord");
-        gl.enableVertexAttribArray( shaderProgram.vertexTextureCoordAttribute);
-
+        shaderProgram.vertexColorAttribute = gl.getAttribLocation (
+                                                  shaderProgram, "vertexColor");
+        gl.enableVertexAttribArray (shaderProgram.vertexColorAttribute);
 
         shaderProgram.modelMatrixUniform = gl.getUniformLocation (shaderProgram,
                                                               'modelMatrix');
@@ -150,12 +143,23 @@
       var particula = new Object();
 
       var FORCES = new Object();
+      var TABLE = new Object();
+      var CUBE = new Object();
       function startBuffers()
       {
         // This should be in a better place.
         FORCES.gravity = new Array();
         FORCES.impact = new Array();
 
+        // "Ball"
+        buffer4ball();
+
+        // Table
+        buffer4table();
+      }
+
+      function buffer4ball()
+      {
         cubeVertexPositionBuffer = gl.createBuffer();
         gl.bindBuffer( gl.ARRAY_BUFFER, cubeVertexPositionBuffer);
         vertexes = [
@@ -199,50 +203,29 @@
         gl.bufferData( gl.ARRAY_BUFFER, new Float32Array( vertexes), gl.STATIC_DRAW);
         cubeVertexPositionBuffer.itemSize = 3; // shape dimension
         cubeVertexPositionBuffer.numItems = 24; // vertex quantities
+        CUBE.vertexPosition = cubeVertexPositionBuffer;
 
-        cubeVertexTextureCoordBuffer = gl.createBuffer();
-        gl.bindBuffer(gl.ARRAY_BUFFER, cubeVertexTextureCoordBuffer);
-        var coordTexture = [
-                            // front
-                            0.0, 0.0,
-                            1.0, 0.0,
-                            1.0, 1.0,
-                            0.0, 1.0,
-
-                            // back
-                            1.0, 0.0,
-                            1.0, 1.0,
-                            0.0, 1.0,
-                            0.0, 0.0,
-
-                            // top
-                            0.0, 1.0,
-                            0.0, 0.0,
-                            1.0, 0.0,
-                            1.0, 1.0,
-
-                            // base
-                            1.0, 1.0,
-                            0.0, 1.0,
-                            0.0, 0.0,
-                            1.0, 0.0,
-
-                            // right
-                            1.0, 0.0,
-                            1.0, 1.0,
-                            0.0, 1.0,
-                            0.0, 0.0,
-
-                            // left
-                            0.0, 0.0,
-                            1.0, 0.0,
-                            1.0, 1.0,
-                            0.0, 1.0,
-                          ];
-
-        gl.bufferData(gl.ARRAY_BUFFER, new Float32Array(coordTexture), gl.STATIC_DRAW);
-        cubeVertexTextureCoordBuffer.itemSize = 2;
-        cubeVertexTextureCoordBuffer.numItems = 24;
+        cubeVertexColorBuffer = gl.createBuffer();
+        gl.bindBuffer( gl.ARRAY_BUFFER, cubeVertexColorBuffer);
+        colors = [
+                    [1.0, 0.0, 0.0, 1.0],     // front
+                    [1.0, 1.0, 0.0, 1.0],     // back
+                    [0.0, 1.0, 0.0, 1.0],     // top
+                    [1.0, 0.5, 0.5, 1.0],     // base
+                    [1.0, 0.0, 1.0, 1.0],     // right
+                    [0.0, 0.0, 1.0, 1.0],     // left
+                 ];
+        var cornerColors = [];
+        for( var i in colors)
+        {
+          var color = colors[i];
+          for( var j=0; j < 4; j++)
+            cornerColors = cornerColors.concat( color);
+        }
+        gl.bufferData( gl.ARRAY_BUFFER, new Float32Array( cornerColors), gl.STATIC_DRAW);
+        cubeVertexColorBuffer.itemSize = 4;
+        cubeVertexColorBuffer.numItems = 24;
+        CUBE.vertexColor = cubeVertexColorBuffer;
 
         cubeVertexIndexBuffer = gl.createBuffer();
         gl.bindBuffer( gl.ELEMENT_ARRAY_BUFFER, cubeVertexIndexBuffer);
@@ -257,39 +240,53 @@
         gl.bufferData( gl.ELEMENT_ARRAY_BUFFER, new Uint16Array( index), gl.STATIC_DRAW);
         cubeVertexIndexBuffer.itemSize = 1;
         cubeVertexIndexBuffer.numItems = 36;
+        CUBE.vertexIndex = cubeVertexIndexBuffer;
+
         particula.m = 2;
         particula.f = 0;
         particula.v = new Array( 0, 0, 0);
-        particula.x = new Array( 0, 5, -20);
+        particula.x = new Array( 0, 0, -10);
         FORCES.gravity.push( particula);
+      }
+
+      function buffer4table()
+      {
+        tableVertexPositionBuffer = gl.createBuffer();
+        gl.bindBuffer( gl.ARRAY_BUFFER, tableVertexPositionBuffer);
+        vertices = [ 
+                     1.0,  1.0, 0.0,
+                    -1.0,  1.0, 0.0,
+                    -0.8, -1.0, 0.0,
+                     0.8, -1.0, 0.0,
+                     1.0,  1.0, 0.0
+                   ];
+
+        gl.bufferData( gl.ARRAY_BUFFER, new Float32Array( vertices), gl.STATIC_DRAW);
+        tableVertexPositionBuffer.itemSize = 3; // shape dimension
+        tableVertexPositionBuffer.numItems = 5; // vertex quantities
+        TABLE.vertexPosition = tableVertexPositionBuffer;
+
+        tableVertexColorBuffer = gl.createBuffer();
+        gl.bindBuffer( gl.ARRAY_BUFFER, tableVertexColorBuffer);
+        colors = [
+                    0.0, 0.0, 0.6, 1.0,
+                    0.0, 0.0, 0.6, 1.0,
+                    0.0, 0.0, 0.6, 1.0,
+                    0.0, 0.0, 0.6, 1.0,
+                    0.0, 0.0, 0.6, 1.0,
+                 ];
+
+
+        gl.bufferData( gl.ARRAY_BUFFER, new Float32Array( colors), gl.STATIC_DRAW);
+        tableVertexColorBuffer.itemSize = 4;
+        tableVertexColorBuffer.numItems = 5;
+        TABLE.vertexColor = tableVertexColorBuffer;
       }
 
       function startEnvironment()
       {
-        gl.clearColor( 1.0, 1.0, 1.0, 1.0); // a black panel
+        gl.clearColor( 0.0, 0.0, 1.0, 1.0); // a black panel
         gl.enable( gl.DEPTH_TEST); // z-buffer test (not necessary now)
-      }
-
-      var texture;
-      function startTexture()
-      {
-        texture = gl.createTexture();
-        texture.image = new Image();
-        texture.image.onload = function()
-        {
-          makeTexture( texture);
-        }
-        texture.image.src = "crab-square.png"
-      }
-
-      function makeTexture( texture)
-      {
-        gl.bindTexture(gl.TEXTURE_2D, texture);
-        gl.pixelStorei(gl.UNPACK_FLIP_Y_WEBGL, false);
-        gl.texImage2D(gl.TEXTURE_2D, 0, gl.RGBA, gl.RGBA, gl.UNSIGNED_BYTE, texture.image);
-        gl.texParameteri(gl.TEXTURE_2D, gl.TEXTURE_MAG_FILTER, gl.NEAREST);
-        gl.texParameteri(gl.TEXTURE_2D, gl.TEXTURE_MIN_FILTER, gl.NEAREST);
-        gl.bindTexture(gl.TEXTURE_2D, null);
       }
 
       function loop()
@@ -299,9 +296,6 @@
         animate();
       }
 
-      var rotX = 0;
-      var rotY = 0;
-      var rotZ = 0;
       function drawScene()
       {
         gl.clear( gl.COLOR_BUFFER_BIT | gl.DEPTH_BUFFER_BIT);
@@ -316,19 +310,26 @@
         gl.vertexAttribPointer( shaderProgram.vertexPositionAttribute,
                       cubeVertexPositionBuffer.itemSize, gl.FLOAT, false, 0, 0);
 
-        gl.bindBuffer( gl.ARRAY_BUFFER, cubeVertexTextureCoordBuffer);
-        gl.vertexAttribPointer( shaderProgram.vertexTextureCoordAttribute,
-                        cubeVertexTextureCoordBuffer.itemSize, gl.FLOAT, false, 0, 0);
-        gl.bindBuffer( gl.ARRAY_BUFFER, cubeVertexTextureCoordBuffer);
-        gl.vertexAttribPointer( shaderProgram.vertexTextureCoordAttribute, cubeVertexTextureCoordBuffer.itemSize, gl.FLOAT, false, 0, 0);
-        
-        gl.activeTexture( gl.TEXTURE0);
-        gl.bindTexture( gl.TEXTURE_2D, texture);
-        gl.uniform1i( shaderProgram.samplerUniform, 0);
+        gl.bindBuffer( gl.ARRAY_BUFFER, cubeVertexColorBuffer);
+        gl.vertexAttribPointer( shaderProgram.vertexColorAttribute,
+                        cubeVertexColorBuffer.itemSize, gl.FLOAT, false, 0, 0);
 
         gl.bindBuffer(gl.ELEMENT_ARRAY_BUFFER, cubeVertexIndexBuffer);
         setMatrixUniforms();
         gl.drawElements( gl.TRIANGLES, cubeVertexIndexBuffer.numItems, gl.UNSIGNED_SHORT, 0);
+
+        // draw table
+        mat4.identity( modelMatrix);
+        mat4.translate( modelMatrix, [0, 0, -2.5]);
+        gl.bindBuffer( gl.ARRAY_BUFFER, TABLE.vertexPosition);
+        gl.vertexAttribPointer( shaderProgram.vertexPositionAttribute,
+                        TABLE.vertexPosition.itemSize, gl.FLOAT, false, 0, 0);
+
+        gl.bindBuffer( gl.ARRAY_BUFFER, TABLE.vertexColor);
+        gl.vertexAttribPointer( shaderProgram.vertexColorAttribute,
+                        TABLE.vertexColor.itemSize, gl.FLOAT, false, 0, 0);
+        setMatrixUniforms();
+        gl.drawArrays( gl.LINE_STRIP, 0, TABLE.vertexPosition.numItems);
       }
 
       function setMatrixUniforms()
@@ -360,10 +361,10 @@
         {
           var p = falling_particles[i];
 
-          if(p.x[1] <= -6.6)
+          if(p.x[1] <= -5)
           {
             p.v[1] = p.f = 0;
-            p.x[1] = -6.6;
+            p.x[1] = -5;
             break;
           }
 
@@ -371,7 +372,7 @@
           p.v[1] -= 0.05;
           p.x[1] += p.v[1];
 
-          if(p.x[1] <= -6)
+          if(p.x[1] <= -4.5)
           { 
             FORCES.impact.push( p);
           }
@@ -386,11 +387,11 @@
       }
     </script>
 
-    <title>Textures with WebGL</title>
+    <title>PINBALL</title>
   </head>
   
   <body>
-    Look at the crab (by wikimedia): <br />
+    Pinball: <br />
     <canvas id="canvas-webgl"
             width="800px"
             height="600px">
