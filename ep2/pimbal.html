@@ -152,13 +152,16 @@
         FORCES.impact = new Array();
 
         // "Ball"
-        buffer4ball();
+        buffer2ball();
 
         // Table
-        buffer4table();
+        buffer2table();
+
+        // Obstacle
+        buffer2obstacle();
       }
 
-      function buffer4ball()
+      function buffer2ball()
       {
         cubeVertexPositionBuffer = gl.createBuffer();
         gl.bindBuffer( gl.ARRAY_BUFFER, cubeVertexPositionBuffer);
@@ -249,7 +252,7 @@
         FORCES.gravity.push( particula);
       }
 
-      function buffer4table()
+      function buffer2table()
       {
         tableVertexPositionBuffer = gl.createBuffer();
         gl.bindBuffer( gl.ARRAY_BUFFER, tableVertexPositionBuffer);
@@ -281,6 +284,42 @@
         tableVertexColorBuffer.itemSize = 4;
         tableVertexColorBuffer.numItems = 5;
         TABLE.vertexColor = tableVertexColorBuffer;
+      }
+
+      var OBSTACLE = new Object();
+      function buffer2obstacle()
+      {
+        vertexPosition = gl.createBuffer();
+        gl.bindBuffer( gl.ARRAY_BUFFER, vertexPosition);
+        vertices = [ 
+                      0.5,  0.5,  0.0,
+                      0.25, 0.5, 0.0,
+                      0.25, 0.0,  0.0,
+                     -0.25,-0.0,0.0,
+                      0.5,  0.5,  0.0
+                   ];
+
+        gl.bufferData( gl.ARRAY_BUFFER, new Float32Array( vertices), gl.STATIC_DRAW);
+        vertexPosition.itemSize = 3; // shape dimension
+        vertexPosition.numItems = 5; // vertex quantities
+        OBSTACLE.vertexPosition = vertexPosition;
+
+        vertexColorBuffer = gl.createBuffer();
+        gl.bindBuffer( gl.ARRAY_BUFFER, vertexColorBuffer);
+        colors = [
+                    0.2, 0.2, 0.2, 1.0,
+                    0.2, 0.2, 0.2, 1.0,
+                    0.2, 0.2, 0.2, 1.0,
+                    0.2, 0.2, 0.2, 1.0,
+                    0.2, 0.2, 0.2, 1.0,
+                 ];
+
+
+        gl.bufferData( gl.ARRAY_BUFFER, new Float32Array( colors), gl.STATIC_DRAW);
+        vertexColorBuffer.itemSize = 4;
+        vertexColorBuffer.numItems = 5;
+        OBSTACLE.vertexColor = vertexColorBuffer;
+
       }
 
       function startEnvironment()
@@ -330,6 +369,38 @@
                         TABLE.vertexColor.itemSize, gl.FLOAT, false, 0, 0);
         setMatrixUniforms();
         gl.drawArrays( gl.LINE_STRIP, 0, TABLE.vertexPosition.numItems);
+
+        drawObstacles();
+      }
+
+      function drawObstacles()
+      {
+        // draw obstacle
+        mat4.identity( modelMatrix);
+        mat4.translate( modelMatrix, [0.6, -1.6, -5]);
+        gl.bindBuffer( gl.ARRAY_BUFFER, OBSTACLE.vertexPosition);
+        gl.vertexAttribPointer( shaderProgram.vertexPositionAttribute,
+                        OBSTACLE.vertexPosition.itemSize, gl.FLOAT, false, 0, 0);
+
+        gl.bindBuffer( gl.ARRAY_BUFFER, OBSTACLE.vertexColor);
+        gl.vertexAttribPointer( shaderProgram.vertexColorAttribute,
+                        OBSTACLE.vertexColor.itemSize, gl.FLOAT, false, 0, 0);
+        setMatrixUniforms();
+        gl.drawArrays( gl.TRIANGLE_STRIP, 0, OBSTACLE.vertexPosition.numItems);
+
+        // draw mirrored obstacle
+        mat4.identity( modelMatrix);
+        mat4.translate( modelMatrix, [-0.6, -1.6, -5]);
+        mat4.rotate( modelMatrix, Math.PI, [0, 1, 0]);
+        gl.bindBuffer( gl.ARRAY_BUFFER, OBSTACLE.vertexPosition);
+        gl.vertexAttribPointer( shaderProgram.vertexPositionAttribute,
+                        OBSTACLE.vertexPosition.itemSize, gl.FLOAT, false, 0, 0);
+
+        gl.bindBuffer( gl.ARRAY_BUFFER, OBSTACLE.vertexColor);
+        gl.vertexAttribPointer( shaderProgram.vertexColorAttribute,
+                        OBSTACLE.vertexColor.itemSize, gl.FLOAT, false, 0, 0);
+        setMatrixUniforms();
+        gl.drawArrays( gl.TRIANGLE_STRIP, 0, OBSTACLE.vertexPosition.numItems);
       }
 
       function setMatrixUniforms()
